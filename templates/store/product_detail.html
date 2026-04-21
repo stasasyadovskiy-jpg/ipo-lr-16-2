@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ product.name }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .product-detail { max-width: 800px; margin: 0 auto; }
+        .product-detail img { max-width: 400px; height: auto; }
+        .price { font-size: 24px; font-weight: bold; color: #2ecc71; }
+        .btn { display: inline-block; padding: 10px 20px; background: #3498db; color: white; text-decoration: none; border-radius: 3px; margin-right: 10px; }
+        .btn:hover { background: #2980b9; }
+        .back-link { margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="product-detail">
+        <h1>{{ product.name }}</h1>
+        
+        {% if product.image %}
+        <img src="{{ product.image.url }}" alt="{{ product.name }}">
+        {% endif %}
+        
+        <p class="price">{{ product.price }} руб.</p>
+        <p><strong>Категория:</strong> {{ product.category.name }}</p>
+        <p><strong>Производитель:</strong> {{ product.manufacturer.name }} ({{ product.manufacturer.country }})</p>
+        <p><strong>В наличии:</strong> {{ product.stock_quantity }} шт.</p>
+        <p><strong>Описание:</strong> {{ product.description }}</p>
+        
+        {% if user.is_authenticated %}
+        <a href="{% url 'add_to_cart' product.id %}" class="btn">🛒 Добавить в корзину</a>
+        {% else %}
+        <p><em>Войдите, чтобы добавить товар в корзину</em></p>
+        {% endif %}
+        
+        <div class="back-link">
+            <a href="{% url 'product_list' %}" class="btn">← Назад к каталогу</a>
+            <a href="/" class="btn">🏠 На главную</a>
+        </div>
+    </div>
+</body>
+</html>
