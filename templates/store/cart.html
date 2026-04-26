@@ -72,13 +72,18 @@
             {% endfor %}
         </tbody>
     </table>
-    
+
     <div class="total">
         Общая стоимость: {{ total_price }} руб.
+    </div>
+
+    <div style="text-align: right; margin-top: 20px;">
+        <a href="{% url 'checkout' %}" class="btn" style="background: #2ecc71;">✅ Оформить заказ</a>
     </div>
     {% else %}
     <p>Ваша корзина пуста.</p>
     <a href="{% url 'product_list' %}" class="btn">Перейти в каталог</a>
     {% endif %}
+    
 </body>
 </html>

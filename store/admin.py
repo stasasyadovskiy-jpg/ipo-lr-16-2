@@ -54,3 +54,24 @@ class CartItemAdmin(admin.ModelAdmin):
     def item_price_display(self, obj):
         return obj.item_price()
     item_price_display.short_description = 'Стоимость'
+
+from .models import Order, OrderItem
+
+class OrderItemInline(admin.TabularInline):
+    model = OrderItem
+    extra = 0
+    readonly_fields = ('item_total',)
+
+    def item_total(self, obj):
+        if obj.pk:
+            return obj.item_total()
+        return '-'
+    item_total.short_description = 'Стоимость'
+
+
+@admin.register(Order)
+class OrderAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user', 'phone', 'email', 'total_price', 'created_at')
+    inlines = [OrderItemInline]
+    list_filter = ('created_at',)
+    search_fields = ('user__username', 'email', 'phone')

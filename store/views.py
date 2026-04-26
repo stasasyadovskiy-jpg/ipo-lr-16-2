@@ -4,6 +4,10 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.contrib import messages
 from .models import Product, Category, Manufacturer, Cart, CartItem
+from django.core.mail import EmailMessage
+from .forms import CheckoutForm
+from .models import Order, OrderItem
+from .utils import generate_excel_receipt
 
 
 def home(request):
@@ -134,3 +138,79 @@ def cart_view(request):
         'total_price': total_price,
     }
     return render(request, 'store/cart.html', context)
+
+from django.core.mail import EmailMessage
+from .forms import CheckoutForm
+from .models import Order, OrderItem
+from .utils import generate_excel_receipt
+
+
+@login_required
+def checkout(request):
+    cart = get_object_or_404(Cart, user=request.user)
+    cart_items = cart.items.all()
+
+    if not cart_items.exists():
+        messages.warning(request, 'Ваша корзина пуста')
+        return redirect('product_list')
+
+    if request.method == 'POST':
+        form = CheckoutForm(request.POST)
+        if form.is_valid():
+            try:
+                order = Order.objects.create(
+                    user=request.user,
+                    address=form.cleaned_data['address'],
+                    phone=form.cleaned_data['phone'],
+                    email=form.cleaned_data['email'],
+                    comment=form.cleaned_data.get('comment', ''),
+                    total_price=cart.total_price()
+                )
+
+                for item in cart_items:
+                    OrderItem.objects.create(
+                        order=order,
+                        product=item.product,
+                        quantity=item.quantity,
+                        price=item.product.price
+                    )
+
+                excel_file = generate_excel_receipt(order)
+
+                email = EmailMessage(
+                    subject=f'Чек заказа №{order.pk} - Магазин аксессуаров для животных',
+                    body=f'Здравствуйте, {request.user.username}!\n\n'
+                         f'Ваш заказ №{order.pk} успешно оформлен.\n'
+                         f'Сумма заказа: {order.total_price} руб.\n'
+                         f'Адрес доставки: {order.address}\n\n'
+                         f'Чек во вложении.\n\n'
+                         f'Спасибо за покупку!',
+                    from_email='shop@example.com',
+                    to=[order.email],
+                )
+                email.attach(f'check_order_{order.pk}.xlsx', excel_file.read(),
+                             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+                email.send(fail_silently=False)
+
+                cart_items.delete()
+                messages.success(request, f'Заказ №{order.pk} оформлен! Чек отправлен на {order.email}')
+                return redirect('order_success', order_id=order.pk)
+
+            except Exception as e:
+                messages.error(request, f'Ошибка при оформлении заказа: {str(e)}')
+                return redirect('checkout')
+    else:
+        form = CheckoutForm()
+
+    context = {
+        'form': form,
+        'cart_items': cart_items,
+        'total_price': cart.total_price(),
+    }
+    return render(request, 'store/checkout.html', context)
+
+
+def order_success(request, order_id):
+    order = get_object_or_404(Order, pk=order_id)
+    context = {'order': order}
+    return render(request, 'store/order_success.html', context)

@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Заказ оформлен</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; text-align: center; }
+        .success-box { max-width: 500px; margin: 100px auto; padding: 30px; background: #d4edda; border-radius: 10px; }
+        .btn { display: inline-block; padding: 10px 20px; background: #3498db; color: white; text-decoration: none; border-radius: 3px; margin: 10px; }
+    </style>
+</head>
+<body>
+    <div class="success-box">
+        <h1>✅ Заказ №{{ order.id }} оформлен!</h1>
+        <p>Сумма: {{ order.total_price }} руб.</p>
+        <p>Чек отправлен на email: {{ order.email }}</p>
+        <a href="{% url 'product_list' %}" class="btn">Продолжить покупки</a>
+        <a href="/" class="btn">На главную</a>
+    </div>
+</body>
+</html>
