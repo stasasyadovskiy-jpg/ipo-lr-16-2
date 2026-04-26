@@ -3,22 +3,22 @@ from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.contrib import messages
-from .models import Product, Category, Manufacturer, Cart, CartItem
 from django.core.mail import EmailMessage
+from .models import Product, Category, Manufacturer, Cart, CartItem, Order, OrderItem
 from .forms import CheckoutForm
-from .models import Order, OrderItem
 from .utils import generate_excel_receipt
 from rest_framework import viewsets
-from .serializers import CategorySerializer, ManufacturerSerializer, ProductSerializer, CartSerializer, CartItemSerializer
+from .serializers import CategorySerializer, ManufacturerSerializer, ProductSerializer as ProductAPISerializer, CartSerializer, CartItemSerializer
 
 
 def home(request):
-    return HttpResponse("""
-        <h1>Магазин аксессуаров для домашних животных</h1>
-        <p><a href='/catalog/'>Каталог товаров</a></p>
-        <p><a href='/about/'>Об авторе</a></p>
-        <p><a href='/shop/'>О магазине</a></p>
-    """)
+    popular_products = Product.objects.all().order_by('-id')[:6]
+    categories = Category.objects.all()
+    context = {
+        'popular_products': popular_products,
+        'categories': categories,
+    }
+    return render(request, 'store/index.html', context)
 
 
 def about(request):
@@ -50,14 +50,14 @@ def product_list(request):
     categories = Category.objects.all()
     manufacturers = Manufacturer.objects.all()
     
-    category_id = request.GET.get('category')
-    manufacturer_id = request.GET.get('manufacturer')
+    cat_id = request.GET.get('category', '')
+    man_id = request.GET.get('manufacturer', '')
     search_query = request.GET.get('search', '')
     
-    if category_id:
-        products = products.filter(category_id=category_id)
-    if manufacturer_id:
-        products = products.filter(manufacturer_id=manufacturer_id)
+    if cat_id:
+        products = products.filter(category_id=int(cat_id))
+    if man_id:
+        products = products.filter(manufacturer_id=int(man_id))
     if search_query:
         products = products.filter(
             Q(name__icontains=search_query) | Q(description__icontains=search_query)
@@ -67,12 +67,11 @@ def product_list(request):
         'products': products,
         'categories': categories,
         'manufacturers': manufacturers,
-        'selected_category': int(category_id) if category_id else None,
-        'selected_manufacturer': int(manufacturer_id) if manufacturer_id else None,
+        'selected_category': int(cat_id) if cat_id else '',
+        'selected_manufacturer': int(man_id) if man_id else '',
         'search_query': search_query,
     }
     return render(request, 'store/product_list.html', context)
-
 
 def product_detail(request, pk):
     product = get_object_or_404(Product, pk=pk)

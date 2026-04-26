@@ -1,43 +1,42 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ product.name }}</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        .product-detail { max-width: 800px; margin: 0 auto; }
-        .product-detail img { max-width: 400px; height: auto; }
-        .price { font-size: 24px; font-weight: bold; color: #2ecc71; }
-        .btn { display: inline-block; padding: 10px 20px; background: #3498db; color: white; text-decoration: none; border-radius: 3px; margin-right: 10px; }
-        .btn:hover { background: #2980b9; }
-        .back-link { margin-top: 20px; }
-    </style>
-</head>
-<body>
-    <div class="product-detail">
-        <h1>{{ product.name }}</h1>
-        
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}{{ product.name }}{% endblock %}
+{% block content %}
+
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/">Главная</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'product_list' %}">Каталог</a></li>
+        <li class="breadcrumb-item active">{{ product.name }}</li>
+    </ol>
+</nav>
+
+<div class="row">
+    <div class="col-md-6">
         {% if product.image %}
-        <img src="{{ product.image.url }}" alt="{{ product.name }}">
+        <img src="{{ product.image.url }}" class="img-fluid rounded" alt="{{ product.name }}">
         {% endif %}
-        
-        <p class="price">{{ product.price }} руб.</p>
-        <p><strong>Категория:</strong> {{ product.category.name }}</p>
-        <p><strong>Производитель:</strong> {{ product.manufacturer.name }} ({{ product.manufacturer.country }})</p>
-        <p><strong>В наличии:</strong> {{ product.stock_quantity }} шт.</p>
-        <p><strong>Описание:</strong> {{ product.description }}</p>
-        
-        {% if user.is_authenticated %}
-        <a href="{% url 'add_to_cart' product.id %}" class="btn">🛒 Добавить в корзину</a>
-        {% else %}
-        <p><em>Войдите, чтобы добавить товар в корзину</em></p>
-        {% endif %}
-        
-        <div class="back-link">
-            <a href="{% url 'product_list' %}" class="btn">← Назад к каталогу</a>
-            <a href="/" class="btn">🏠 На главную</a>
-        </div>
     </div>
-</body>
-</html>
+    <div class="col-md-6">
+        <h1>{{ product.name }}</h1>
+        <p class="text-muted">Производитель: {{ product.manufacturer.name }} ({{ product.manufacturer.country }})</p>
+        <p class="price fs-3">{{ product.price }} руб.</p>
+        <p>{{ product.description }}</p>
+        <p>Категория: {{ product.category.name }}</p>
+        <p>В наличии: {{ product.stock_quantity }} шт.</p>
+        {% if user.is_authenticated %}
+            {% if product.stock_quantity > 0 %}
+            <button class="btn btn-success btn-lg" onclick="addToCart({{ product.id }})">🛒 Добавить в корзину</button>
+            {% else %}
+            <button class="btn btn-secondary btn-lg" disabled>Нет в наличии</button>
+            {% endif %}
+        {% else %}
+            <a href="/admin/login/?next=/catalog/{{ product.pk }}/" class="btn btn-primary">Войдите, чтобы купить</a>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script src="{% static 'js/main.js' %}"></script>
+{% endblock %}
