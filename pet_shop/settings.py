@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
     'store',
 ]
 
@@ -132,3 +133,13 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'stasasyadovskiy@gmail.com'
 EMAIL_HOST_PASSWORD = 'luccymiiovnvteeq'
 DEFAULT_FROM_EMAIL = 'stasasyadovskiy@gmail.com'
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+}

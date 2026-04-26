@@ -1,5 +1,14 @@
-from django.urls import path
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
 from . import views
+from .views import CategoryViewSet, ManufacturerViewSet, ProductViewSet, CartViewSet, CartItemViewSet
+
+router = DefaultRouter()
+router.register(r'categories', CategoryViewSet)
+router.register(r'manufacturers', ManufacturerViewSet)
+router.register(r'products', ProductViewSet)
+router.register(r'carts', CartViewSet)
+router.register(r'cart-items', CartItemViewSet)
 
 urlpatterns = [
     path('', views.home, name='home'),
@@ -13,4 +22,5 @@ urlpatterns = [
     path('cart/remove/<int:item_id>/', views.remove_from_cart, name='remove_from_cart'),
     path('checkout/', views.checkout, name='checkout'),
     path('order/success/<int:order_id>/', views.order_success, name='order_success'),
+    path('api/', include(router.urls)),
 ]

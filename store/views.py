@@ -8,6 +8,8 @@ from django.core.mail import EmailMessage
 from .forms import CheckoutForm
 from .models import Order, OrderItem
 from .utils import generate_excel_receipt
+from rest_framework import viewsets
+from .serializers import CategorySerializer, ManufacturerSerializer, ProductSerializer, CartSerializer, CartItemSerializer
 
 
 def home(request):
@@ -214,3 +216,31 @@ def order_success(request, order_id):
     order = get_object_or_404(Order, pk=order_id)
     context = {'order': order}
     return render(request, 'store/order_success.html', context)
+
+from rest_framework import viewsets
+from .serializers import CategorySerializer, ManufacturerSerializer, ProductSerializer, CartSerializer, CartItemSerializer
+
+
+class CategoryViewSet(viewsets.ModelViewSet):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+
+
+class ManufacturerViewSet(viewsets.ModelViewSet):
+    queryset = Manufacturer.objects.all()
+    serializer_class = ManufacturerSerializer
+
+
+class ProductViewSet(viewsets.ModelViewSet):
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
+
+
+class CartViewSet(viewsets.ModelViewSet):
+    queryset = Cart.objects.all()
+    serializer_class = CartSerializer
+
+
+class CartItemViewSet(viewsets.ModelViewSet):
+    queryset = CartItem.objects.all()
+    serializer_class = CartItemSerializer
