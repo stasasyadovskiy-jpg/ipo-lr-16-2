@@ -1,14 +1,24 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth import login, logout
+from django.contrib.auth.forms import AuthenticationForm
 from django.db.models import Q
 from django.contrib import messages
 from django.core.mail import EmailMessage
-from .models import Product, Category, Manufacturer, Cart, CartItem, Order, OrderItem
-from .forms import CheckoutForm
-from .utils import generate_excel_receipt
 from rest_framework import viewsets
-from .serializers import CategorySerializer, ManufacturerSerializer, ProductSerializer as ProductAPISerializer, CartSerializer, CartItemSerializer
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from .models import Product, Category, Manufacturer, Cart, CartItem, Order, OrderItem, Profile
+from .forms import CheckoutForm, SignUpForm, ProfileEditForm
+from .utils import generate_excel_receipt
+from .serializers import CategorySerializer, ManufacturerSerializer, ProductSerializer, CartSerializer, CartItemSerializer, ProfileSerializer
+from .permissions import IsAdminOrReadOnly, IsOwnerOrAdmin
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from .serializers import ProfileSerializer
 
 
 def home(request):
@@ -23,7 +33,7 @@ def home(request):
 
 def about(request):
     return HttpResponse("""
-        <h1>Об авторе</h1>
+        <h1>👤 Об авторе</h1>
         <p>Лабораторную работу выполнил: Асядовский Станислав</p>
         <p>Группа: 88ТП</p>
         <p><a href='/'>← На главную</a></p>
@@ -32,14 +42,14 @@ def about(request):
 
 def shop_info(request):
     return HttpResponse("""
-        <h1>О магазине</h1>
+        <h1>🛍️ О магазине</h1>
         <p>Тема лабораторной работы: Магазин аксессуаров для домашних животных</p>
-        <p>В моём магазине вы найдёте:</p>
+        <p>В нашем магазине вы найдёте:</p>
         <ul>
-            <li>Ошейники и поводки для собак</li>
-            <li>Когтеточки и игрушки для кошек</li>
-            <li>Домики и поилки для грызунов</li>
-            <li>Одежду и средства для ухода</li>
+            <li>🐕 Ошейники и поводки для собак</li>
+            <li>🐈 Когтеточки и игрушки для кошек</li>
+            <li>🐹 Домики и поилки для грызунов</li>
+            <li>🦜 Клетки и жердочки для птиц</li>
         </ul>
         <p><a href='/'>← На главную</a></p>
     """)
@@ -72,6 +82,7 @@ def product_list(request):
         'search_query': search_query,
     }
     return render(request, 'store/product_list.html', context)
+
 
 def product_detail(request, pk):
     product = get_object_or_404(Product, pk=pk)
@@ -139,11 +150,6 @@ def cart_view(request):
         'total_price': total_price,
     }
     return render(request, 'store/cart.html', context)
-
-from django.core.mail import EmailMessage
-from .forms import CheckoutForm
-from .models import Order, OrderItem
-from .utils import generate_excel_receipt
 
 
 @login_required
@@ -216,30 +222,143 @@ def order_success(request, order_id):
     context = {'order': order}
     return render(request, 'store/order_success.html', context)
 
-from rest_framework import viewsets
-from .serializers import CategorySerializer, ManufacturerSerializer, ProductSerializer, CartSerializer, CartItemSerializer
 
+# Представления аутентификации
+
+def signup_view(request):
+    if request.method == 'POST':
+        form = SignUpForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            messages.success(request, 'Регистрация прошла успешно!')
+            return redirect('product_list')
+    else:
+        form = SignUpForm()
+    return render(request, 'store/signup.html', {'form': form})
+
+
+def login_view(request):
+    if request.method == 'POST':
+        form = AuthenticationForm(data=request.POST)
+        if form.is_valid():
+            user = form.get_user()
+            login(request, user)
+            next_url = request.GET.get('next', 'product_list')
+            messages.success(request, f'Добро пожаловать, {user.username}!')
+            return redirect(next_url)
+    else:
+        form = AuthenticationForm()
+    return render(request, 'store/login.html', {'form': form})
+
+
+def logout_view(request):
+    logout(request)
+    messages.success(request, 'Вы вышли из системы')
+    return redirect('product_list')
+
+
+@login_required
+def profile_view(request):
+    profile = request.user.profile
+    orders = Order.objects.filter(user=request.user).order_by('-created_at')
+    context = {
+        'profile': profile,
+        'orders': orders,
+    }
+    return render(request, 'store/profile.html', context)
+
+
+@login_required
+def profile_edit(request):
+    profile = request.user.profile
+    if request.method == 'POST':
+        form = ProfileEditForm(request.POST, instance=profile)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Профиль обновлён')
+            return redirect('profile')
+    else:
+        form = ProfileEditForm(instance=profile)
+    return render(request, 'store/profile_edit.html', {'form': form})
+
+
+@login_required
+def order_detail(request, order_id):
+    order = get_object_or_404(Order, pk=order_id)
+    if order.user != request.user and not request.user.is_staff:
+        messages.error(request, 'Доступ запрещён')
+        return redirect('profile')
+    context = {'order': order}
+    return render(request, 'store/order_detail.html', context)
+
+
+# API ViewSets
 
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
+    permission_classes = [IsAdminOrReadOnly]
 
 
 class ManufacturerViewSet(viewsets.ModelViewSet):
     queryset = Manufacturer.objects.all()
     serializer_class = ManufacturerSerializer
+    permission_classes = [IsAdminOrReadOnly]
 
 
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
+    permission_classes = [IsAdminOrReadOnly]
 
 
 class CartViewSet(viewsets.ModelViewSet):
-    queryset = Cart.objects.all()
     serializer_class = CartSerializer
+    permission_classes = [IsOwnerOrAdmin]
+
+    def get_queryset(self):
+        if self.request.user.is_staff or self.request.user.profile.role == 'admin':
+            return Cart.objects.all()
+        return Cart.objects.filter(user=self.request.user)
 
 
 class CartItemViewSet(viewsets.ModelViewSet):
-    queryset = CartItem.objects.all()
     serializer_class = CartItemSerializer
+    permission_classes = [IsOwnerOrAdmin]
+
+    def get_queryset(self):
+        if self.request.user.is_staff or self.request.user.profile.role == 'admin':
+            return CartItem.objects.all()
+        return CartItem.objects.filter(cart__user=self.request.user)
+
+
+# API /api/me/
+
+@api_view(['GET', 'PATCH'])
+@permission_classes([IsAuthenticated])
+def me_view(request):
+    profile = request.user.profile
+    if request.method == 'GET':
+        serializer = ProfileSerializer(profile)
+        return Response(serializer.data)
+    elif request.method == 'PATCH':
+        serializer = ProfileSerializer(profile, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)
+    
+@api_view(['GET', 'PATCH'])
+@permission_classes([IsAuthenticated])
+def me_view(request):
+    profile = request.user.profile
+    if request.method == 'GET':
+        serializer = ProfileSerializer(profile)
+        return Response(serializer.data)
+    elif request.method == 'PATCH':
+        serializer = ProfileSerializer(profile, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)

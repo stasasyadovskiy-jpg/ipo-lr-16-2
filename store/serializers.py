@@ -1,3 +1,5 @@
+from profile import Profile
+
 from rest_framework import serializers
 from .models import Category, Manufacturer, Product, Cart, CartItem
 
@@ -49,3 +51,19 @@ class CartSerializer(serializers.ModelSerializer):
 
     def get_total_price(self, obj):
         return obj.total_price()
+    
+class ProfileSerializer(serializers.ModelSerializer):
+    username = serializers.ReadOnlyField(source='user.username')
+    email = serializers.EmailField(source='user.email')
+
+    class Meta:
+        model = Profile
+        fields = ['id', 'username', 'email', 'full_name', 'phone', 'address',
+                  'favorite_category', 'delivery_city', 'role']
+
+    def update(self, instance, validated_data):
+        user_data = validated_data.pop('user', {})
+        if user_data:
+            instance.user.email = user_data.get('email', instance.user.email)
+            instance.user.save()
+        return super().update(instance, validated_data)

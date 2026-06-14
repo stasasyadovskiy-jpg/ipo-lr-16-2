@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}Личный кабинет{% endblock %}
+{% block content %}
+<h1>Личный кабинет</h1>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5>Профиль</h5>
+                <p><strong>Имя:</strong> {{ profile.full_name }}</p>
+                <p><strong>Email:</strong> {{ user.email }}</p>
+                <p><strong>Телефон:</strong> {{ profile.phone }}</p>
+                <p><strong>Адрес:</strong> {{ profile.address }}</p>
+                <p><strong>Любимая категория:</strong> {{ profile.favorite_category }}</p>
+                <p><strong>Город доставки:</strong> {{ profile.delivery_city }}</p>
+                <p><strong>Роль:</strong> <span class="badge bg-info">{{ profile.get_role_display }}</span></p>
+                <a href="{% url 'profile_edit' %}" class="btn btn-primary">Редактировать</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <h5>Мои заказы</h5>
+        {% if orders %}
+        <table class="table">
+            <thead><tr><th>№</th><th>Дата</th><th>Сумма</th><th></th></tr></thead>
+            <tbody>
+                {% for order in orders %}
+                <tr>
+                    <td>{{ order.pk }}</td>
+                    <td>{{ order.created_at|date:"d.m.Y" }}</td>
+                    <td>{{ order.total_price }} руб.</td>
+                    <td><a href="{% url 'order_detail' order.pk %}" class="btn btn-sm btn-outline-primary">Подробнее</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>У вас пока нет заказов.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -33,16 +33,20 @@
                 <ul class="navbar-nav">
                     {% if user.is_authenticated %}
                     <li class="nav-item">
-                        <span class="nav-link text-light">Привет, {{ user.username }}</span>
+                        <a class="nav-link" href="{% url 'profile' %}">👤 {{ user.username }}</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/admin/logout/">Выйти</a>
+                        <a class="nav-link" href="{% url 'logout' %}">Выйти</a>
                     </li>
                     {% else %}
                     <li class="nav-item">
-                        <a class="nav-link" href="/admin/login/?next=/catalog/">Войти</a>
+                        <a class="nav-link" href="{% url 'login' %}">Войти</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'signup' %}">Регистрация</a>
                     </li>
                     {% endif %}
+                </ul>
                 </ul>
             </div>
         </div>

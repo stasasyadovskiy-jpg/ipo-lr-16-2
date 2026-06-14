@@ -7,8 +7,8 @@ router = DefaultRouter()
 router.register(r'categories', CategoryViewSet)
 router.register(r'manufacturers', ManufacturerViewSet)
 router.register(r'products', ProductViewSet)
-router.register(r'carts', CartViewSet)
-router.register(r'cart-items', CartItemViewSet)
+router.register(r'carts', CartViewSet, basename='cart')
+router.register(r'cart-items', CartItemViewSet, basename='cartitem')
 
 urlpatterns = [
     path('', views.home, name='home'),
@@ -22,5 +22,12 @@ urlpatterns = [
     path('cart/remove/<int:item_id>/', views.remove_from_cart, name='remove_from_cart'),
     path('checkout/', views.checkout, name='checkout'),
     path('order/success/<int:order_id>/', views.order_success, name='order_success'),
+    path('signup/', views.signup_view, name='signup'),
+    path('login/', views.login_view, name='login'),
+    path('logout/', views.logout_view, name='logout'),
+    path('profile/', views.profile_view, name='profile'),
+    path('profile/edit/', views.profile_edit, name='profile_edit'),
+    path('orders/<int:order_id>/', views.order_detail, name='order_detail'),
+    path('api/me/', views.me_view, name='api_me'),
     path('api/', include(router.urls)),
 ]
