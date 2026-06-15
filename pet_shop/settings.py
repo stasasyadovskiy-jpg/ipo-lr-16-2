@@ -1,13 +1,27 @@
 import os
 from pathlib import Path
+import dj_database_url
+from decouple import config
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-3)_)vs)j+^kd+25_jk+j5#%tv6qilg)58@9k83u!%*9q4kj1q+')
+# -------------------------
+# BASIC SETTINGS
+# -------------------------
 
-DEBUG = os.environ.get('DEBUG', 'True') == 'True'
+SECRET_KEY = config("SECRET_KEY", default="dev-secret-key")
 
-ALLOWED_HOSTS = ['ipo-lr-16-2-production-a7e6.up.railway.app', 'localhost', '127.0.0.1']
+DEBUG = config("DEBUG", default=False, cast=bool)
+
+ALLOWED_HOSTS = ["*"]
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://*.up.railway.app"
+]
+
+# -------------------------
+# INSTALLED APPS
+# -------------------------
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -20,9 +34,13 @@ INSTALLED_APPS = [
     'store',
 ]
 
+# -------------------------
+# MIDDLEWARE
+# -------------------------
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # WhiteNoise — только здесь!
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -31,7 +49,16 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+# -------------------------
+# URL / WSGI
+# -------------------------
+
 ROOT_URLCONF = 'pet_shop.urls'
+WSGI_APPLICATION = 'pet_shop.wsgi.application'
+
+# -------------------------
+# TEMPLATES
+# -------------------------
 
 TEMPLATES = [
     {
@@ -49,15 +76,21 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'pet_shop.wsgi.application'
+# -------------------------
+# DATABASE
+# -------------------------
 
-import dj_database_url
 DATABASES = {
-    'default': dj_database_url.config(
-        default=os.environ.get('DATABASE_URL', f'sqlite:///{BASE_DIR / "db.sqlite3"}'),
-        conn_max_age=600
+    "default": dj_database_url.config(
+        default="sqlite:///db.sqlite3",
+        conn_max_age=600,
+        ssl_require=False
     )
 }
+
+# -------------------------
+# PASSWORD VALIDATION
+# -------------------------
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
@@ -66,18 +99,32 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
+# -------------------------
+# INTERNATIONALIZATION
+# -------------------------
+
 LANGUAGE_CODE = 'ru-ru'
 TIME_ZONE = 'Europe/Moscow'
 USE_I18N = True
 USE_TZ = True
 
+# -------------------------
+# STATIC & MEDIA
+# -------------------------
+
 STATIC_URL = '/static/'
-STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
+# Если у тебя есть папка static — раскомментируй:
+# STATICFILES_DIRS = [BASE_DIR / 'static']
+
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+# -------------------------
+# DJANGO DEFAULTS
+# -------------------------
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -85,6 +132,10 @@ LOGIN_URL = '/admin/login/'
 LOGIN_REDIRECT_URL = '/catalog/'
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+# -------------------------
+# DRF
+# -------------------------
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
@@ -96,7 +147,9 @@ REST_FRAMEWORK = {
     ],
 }
 
-CSRF_TRUSTED_ORIGINS = ['https://ipo-lr-16-2-production-a7e6.up.railway.app']
+# -------------------------
+# SECURITY FOR PRODUCTION
+# -------------------------
 
 if not DEBUG:
     SESSION_COOKIE_SECURE = True
