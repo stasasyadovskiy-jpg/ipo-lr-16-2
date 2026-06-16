@@ -2,6 +2,7 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from . import views
 from .views import CategoryViewSet, ManufacturerViewSet, ProductViewSet, CartViewSet, CartItemViewSet
+from django.http import JsonResponse
 
 router = DefaultRouter()
 router.register(r'categories', CategoryViewSet)
@@ -30,4 +31,5 @@ urlpatterns = [
     path('orders/<int:order_id>/', views.order_detail, name='order_detail'),
     path('api/me/', views.me_view, name='api_me'),
     path('api/', include(router.urls)),
+    path('.well-known/appspecific/com.chrome.devtools.json', lambda r: JsonResponse({})),
 ]
