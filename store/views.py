@@ -110,7 +110,7 @@ def add_to_cart(request, product_id):
     else:
         messages.success(request, f'Товар "{product.name}" добавлен в корзину')
     
-    return redirect('cart')
+    return redirect('cart_view')
 
 
 @login_required
